@@ -2,6 +2,7 @@ package com.example.tasktwo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
@@ -27,6 +29,7 @@ public class MainActivity extends Activity {
 	Button inputButton;
 	TextView outputData;
 	String responseString = null;
+	Product[] products;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +44,7 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View v) {
+				products = null;
 				toRequest();
 			}
 		});
@@ -70,6 +74,35 @@ public class MainActivity extends Activity {
     	new RequestResults().execute("https://services.nexusinds.com/DummySvc/DummySvc.svc/GetData/" + inputString.getText().toString());
 	}
     
+    private void toMap(String string) {
+    	string = string.substring(2, string.length()-2);
+    	String[] result = string.split("\\},\\{");
+    	if (result.length == 0) {
+    		return;
+    	}
+    	products = new Product[result.length];
+    	
+    	for (int count = 0; count < result.length; count++) {
+    		if (count == 60) {
+    			count = 60;
+    		}
+    		String[] keyValue = result[count].split("\\\",\\\"");
+    		if (keyValue.length < 2) {
+    			continue;
+    		}
+    		
+    		String[] temp = keyValue[0].split("\\\":\\\"");
+    		String desc = (temp.length < 2) ? "" : temp[1].replace("\"", "");
+    		temp = keyValue[1].split("\\\":\\\"");
+    		String num = (temp.length < 2) ? "" : temp[1].replace("\"", "");
+    		products[count]= new Product(desc, num);
+    	}
+    }
+    
+    public Product[] getProducts() {
+    	return products;
+    }
+    
     private class RequestResults extends AsyncTask<String, Void, Void>{
 
         @Override
@@ -83,6 +116,9 @@ public class MainActivity extends Activity {
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     response.getEntity().writeTo(out);
                     responseString = out.toString();
+                    if (responseString.length() > 2) {
+                    	toMap(responseString);
+                    }
                     out.close();
                 } else{
                     //Closes the connection.
@@ -104,12 +140,14 @@ public class MainActivity extends Activity {
         
         @Override
         protected void onProgressUpdate(Void... values) {
-        	//TODO
         }
         
         @Override
         protected void onPostExecute(Void result) {
-            outputData.setText(responseString);
+        	outputData.setText("");
+        	Intent nextActivity = new Intent(getApplicationContext(), ResultsActivity.class);
+        	nextActivity.putExtra("products", getProducts());
+        	startActivity(nextActivity);
         }
     }
 }

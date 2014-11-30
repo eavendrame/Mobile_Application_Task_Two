@@ -4,5 +4,7 @@
     <string name="app_name">TaskTwo</string>
     <string name="inputButton">Search</string>
     <string name="action_settings">Settings</string>
-
+    <string name="title_activity_results">ResultsActivity</string>
+    <string name="hello_world">Hello world!</string>
+	<string name="searchLabel">Search by Part Number</string>
 </resources>
